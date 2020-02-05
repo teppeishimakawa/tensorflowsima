@@ -1,23 +1,63 @@
 <html>
 <head>
 <input type="file" multiple id="file" name="file" accept=".csv">
+<input type="file" multiple id="file_rslt" name="file_rslt" accept=".csv">
 <button id="study_run_modelSave">study_run_modelSave</button>
 <button id="load_run">load_run</button>
 <div>学習用データ</div>
   <textarea id="text" rows="10" placeholder="学習用データ"></textarea>
+<input type="text" id="search">
+<div id="exanswer"></div>
+<div id="exchange"></div>
 <div>=== log（新しい順） ===</div>
 <div id="log"></div>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
 
 <script>
 var log=document.getElementById('log');
+var exchange=document.getElementById('exchange');
 var insert='';
 var stdy_rslt;
 var lineArr;
 var itemArr;
+var setToArr;
+var set;
+
+var reader2;
+var rsltArr;
+var tmp = [];
+
+
+//教師データ用
+// 結果ファイル選択ボタンの処理
+var el3 = document.getElementById("file_rslt");
+el3.onchange=function(e)
+{
+ file_rslt = e.target.files;
+ //file reader作成
+ reader2 = new FileReader();
+ reader2.readAsText(file_rslt[0]);
+ reader2.onload = function()
+ {
+   //console.log(reader2.result);
+
+  rsltArr = reader2.result.split("\n");
+　console.log(rsltArr);
+
+    for(var i = 0; i < rsltArr.length; i++) {
+        tmp.push(parseFloat(rsltArr.slice(i,i+1)));
+    }
+
+console.log(tmp);
+ }
+}
 
 
 
+
+
+
+//訓練データ用
 // ファイル選択ボタンの処理
 var el2 = document.getElementById("file");
 el2.onchange=function(e)
@@ -28,7 +68,6 @@ el2.onchange=function(e)
  //file reader作成
  var reader = new FileReader();
  reader.readAsText(file[0]);
-
  reader.onload = function()
  {
     console.log(reader.result);
@@ -48,6 +87,7 @@ el2.onchange=function(e)
 
  var m=1;
  var a;
+ var arr=[];
                 //データ数値化
       for (var i = 0; i < itemArr.length; i++)
 　　　　　//行
@@ -55,6 +95,7 @@ el2.onchange=function(e)
                 //列
       for (var j = 0; j < itemArr[i].length; j++)
         {
+          //intにできる時はintにする
           if(isNaN(parseFloat(itemArr[i][j])) == false)
           {
           itemArr[i][j]=parseFloat(itemArr[i][j]);
@@ -67,7 +108,12 @@ el2.onchange=function(e)
         {
          if(typeof a == 'string' && a == itemArr[x][j])
            {
-            //console.log(a);
+          //重複削除して、配列に戻す
+          arr.push(m + ':' +itemArr[x][j])
+          set = new Set(arr);
+          setToArr = Array.from(set);
+
+          exchange.innerHTML=setToArr;
           itemArr[x][j]=itemArr[x][j].replace(itemArr[x][j],m);
           itemArr[x][j]=parseFloat(itemArr[x][j]);
           //console.log(m);
@@ -79,6 +125,7 @@ el2.onchange=function(e)
 
 
 
+
       //itemArr:行数
         for (var i = 0; i < itemArr.length; i++)
         {
@@ -86,10 +133,6 @@ el2.onchange=function(e)
         for (var j = 0; j < itemArr[i].length; j++)
          {
          insert = insert + itemArr[i][j] + ',' ;
-
-　　　　　
-
-
          }
          insert = insert.slice( 0, -1 )
         insert = insert +  '],';
@@ -100,7 +143,7 @@ el2.onchange=function(e)
 
       document.getElementById('text').value=insert.slice( 0, -1 );
       console.log(insert.slice( 0, -1 ));
-      log.innerHTML = file.name + ' 取得完了' + '<br>' + log.innerHTML;
+      log.innerHTML = file[0].name + ' 取得完了' + '<br>' + log.innerHTML;
  };
 
 };
@@ -129,12 +172,12 @@ document.getElementById("study_run_modelSave").onclick = async function()
     loss: 'binaryCrossentropy'
 });
 */
-
-
  const model = tf.sequential();
- model.add(tf.layers.dense({units: 12, inputShape: [3],activation:'elu'}));
+ //inputShape:入力データセットの列数
+ model.add(tf.layers.dense({units: 12, inputShape: [itemArr[0].length],activation:'elu'}));
+ console.log(itemArr[0].length);
  //model.add(tf.layers.dense({units: 64}));
-model.add(tf.layers.dense({units: 1,activation:'sigmoid'}));
+ model.add(tf.layers.dense({units: 1,activation:'sigmoid'}));
   //学習実行,sgd:確率的勾配降下法オプティマイザ.tf.train.rmsprop(0.01)長重要
   model.compile({loss: 'meanSquaredError', optimizer:tf.train.rmsprop(0.01)});
   // 学習用データ
@@ -148,17 +191,18 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
   //引数2番目は4列2行のshapeを表す。[行,列]
   //x:訓練データ,y:教師データ
   console.log(itemArr);
-  console.log(itemArr.length);
-  console.log(itemArr[0].length);
+  console.log(itemArr.length);//行
+  console.log(itemArr[0].length);//4列
 
-
-  const xs = tf.tensor2d(itemArr,[itemArr.length,itemArr[0].length]);//5行,3列,訓練データ
+ //5行,3列,訓練データ
+  const xs = tf.tensor2d(itemArr,[itemArr.length,itemArr[0].length]);
   xs.print();
-  const ys = tf.tensor2d([[0.1],[3],[0.2],[0.3],[0.4]],[itemArr.length,1]);// 5行1列,教師データ
+  // 4行1列,教師データ
+  const ys = tf.tensor2d(tmp,[itemArr.length,1]);
   // 学習実行,epochsエポック:一つの訓練データを何回繰り返して学習させるか
   await model.fit(xs, ys ,
   {batchSize: 4,
-    epochs: 200,
+    epochs: 50,
      // １回の訓練が終わるたびに呼び出されるコールバック関数
    callbacks:
    {
@@ -167,6 +211,7 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
        // 繰り返しの回数と損失値を出力
        console.log('繰り返し回数'+ epoch);
        console.log('ロス' + logs.loss)
+       const lossData = [epoch,logs.loss];
        // 画面がフリーズしないように次のフレームに進む
        await tf.nextFrame();
      }
@@ -181,6 +226,14 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
 }
 
 
+
+
+
+
+
+
+
+
 /*
 async function main() {
   const model = await tf.loadModel('indexeddb://test')
@@ -190,15 +243,23 @@ async function main() {
 
 main()
 */
-
-
-
 document.getElementById("load_run").onclick=async function()
 {
   const loadModel =await tf.loadLayersModel('indexeddb://test')
   //await実行されたら以下を実行
-  model.predict(tf.tensor3d([[[1], [2]]])).print();
+  loadModel.predict(tf.tensor2d([1,1,0.1],[1,itemArr[0].length])).print();
 }
+
+document.getElementById("search").onchange=function()
+{
+//var srchnum=setToArr.lastIndexOf(document.getElementById("search").value);
+//console.log(srchnum);
+
+//findは配列要素に特定文字列含んだら抽出、もできる！！
+const kekka = setToArr.find(item => item.indexOf(document.getElementById("search").value) !== -1 )
+document.getElementById("exanswer").innerHTML=kekka;
+}
+
 
 
 
