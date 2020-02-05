@@ -1,0 +1,209 @@
+<html>
+<head>
+<input type="file" multiple id="file" name="file" accept=".csv">
+<button id="study_run_modelSave">study_run_modelSave</button>
+<button id="load_run">load_run</button>
+<div>学習用データ</div>
+  <textarea id="text" rows="10" placeholder="学習用データ"></textarea>
+<div>=== log（新しい順） ===</div>
+<div id="log"></div>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+
+<script>
+var log=document.getElementById('log');
+var insert='';
+var stdy_rslt;
+var lineArr;
+var itemArr;
+
+
+
+// ファイル選択ボタンの処理
+var el2 = document.getElementById("file");
+el2.onchange=function(e)
+{
+ console.log('◆学習結果読込開始');
+ log.innerHTML = '◆学習結果読込開始' + '<br>' + log.innerHTML;
+ file = e.target.files;
+ //file reader作成
+ var reader = new FileReader();
+ reader.readAsText(file[0]);
+
+ reader.onload = function()
+ {
+    console.log(reader.result);
+  //ファイルの中身を取得後に処理を行う
+  　console.log('◆学習結果読込完了');
+    log.innerHTML = '◆学習結果読込完了' + '<br>' + log.innerHTML;
+
+      // 行単位で配列にする
+      lineArr = reader.result.split("\n");
+      // 行と列の二次元配列にする
+      itemArr = [];
+
+        for (var i = 0; i < lineArr.length; i++)
+        {
+        itemArr[i] = lineArr[i].split(",");
+        };
+
+ var m=1;
+ var a;
+                //データ数値化
+      for (var i = 0; i < itemArr.length; i++)
+　　　　　//行
+      {
+                //列
+      for (var j = 0; j < itemArr[i].length; j++)
+        {
+          if(isNaN(parseFloat(itemArr[i][j])) == false)
+          {
+          itemArr[i][j]=parseFloat(itemArr[i][j]);
+          }
+
+          a=itemArr[i][j];
+　　　　　
+        //次の行から同じ列だけ同一文字列あるか比較して、1以下の数値に置換
+　　　　 for (var x = 0; x < itemArr.length; x++)
+        {
+         if(typeof a == 'string' && a == itemArr[x][j])
+           {
+            //console.log(a);
+          itemArr[x][j]=itemArr[x][j].replace(itemArr[x][j],m);
+          itemArr[x][j]=parseFloat(itemArr[x][j]);
+          //console.log(m);
+　　　　　　}
+         }
+       }
+       m=m+1;
+      }
+
+
+
+      //itemArr:行数
+        for (var i = 0; i < itemArr.length; i++)
+        {
+         insert = insert + '[';
+        for (var j = 0; j < itemArr[i].length; j++)
+         {
+         insert = insert + itemArr[i][j] + ',' ;
+
+　　　　　
+
+
+         }
+         insert = insert.slice( 0, -1 )
+        insert = insert +  '],';
+        //insert = insert + '],';
+
+        }
+
+
+      document.getElementById('text').value=insert.slice( 0, -1 );
+      console.log(insert.slice( 0, -1 ));
+      log.innerHTML = file.name + ' 取得完了' + '<br>' + log.innerHTML;
+ };
+
+};
+
+
+
+
+document.getElementById("study_run_modelSave").onclick = async function()
+{
+  //tf.sequential モデルを構築
+
+  //units:中間層(隠れ層)のunit数,inputShape:入力数(最小単位の列数)
+  //denseは入力、中間、出力それぞれの層
+  /*
+  model.add(tf.layers.lstm({
+    units: 8,
+    returnSequences: false,
+    inputShape: [2, 1]
+}));
+  model.add(tf.layers.dense({
+    units: 1,
+    activation: 'sigmoid'
+}));
+  model.compile({
+    optimizer: 'adam',
+    loss: 'binaryCrossentropy'
+});
+*/
+
+
+ const model = tf.sequential();
+ model.add(tf.layers.dense({units: 12, inputShape: [3],activation:'elu'}));
+ //model.add(tf.layers.dense({units: 64}));
+model.add(tf.layers.dense({units: 1,activation:'sigmoid'}));
+  //学習実行,sgd:確率的勾配降下法オプティマイザ.tf.train.rmsprop(0.01)長重要
+  model.compile({loss: 'meanSquaredError', optimizer:tf.train.rmsprop(0.01)});
+  // 学習用データ
+
+/*ex.
+const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
+// [[1 2]
+//  [4 3]]
+*/
+
+  //引数2番目は4列2行のshapeを表す。[行,列]
+  //x:訓練データ,y:教師データ
+  console.log(itemArr);
+  console.log(itemArr.length);
+  console.log(itemArr[0].length);
+
+
+  const xs = tf.tensor2d(itemArr,[itemArr.length,itemArr[0].length]);//5行,3列,訓練データ
+  xs.print();
+  const ys = tf.tensor2d([[0.1],[3],[0.2],[0.3],[0.4]],[itemArr.length,1]);// 5行1列,教師データ
+  // 学習実行,epochsエポック:一つの訓練データを何回繰り返して学習させるか
+  await model.fit(xs, ys ,
+  {batchSize: 4,
+    epochs: 200,
+     // １回の訓練が終わるたびに呼び出されるコールバック関数
+   callbacks:
+   {
+     onEpochEnd: async (epoch, logs) =>
+     {
+       // 繰り返しの回数と損失値を出力
+       console.log('繰り返し回数'+ epoch);
+       console.log('ロス' + logs.loss)
+       // 画面がフリーズしないように次のフレームに進む
+       await tf.nextFrame();
+     }
+   }
+  });
+  // 予測 x=5の時のyは?
+  model.predict(tf.tensor2d([1,1,0.1],[1,itemArr[0].length])).print();//テストデータ。1行,3列
+  await model.save('indexeddb://test');
+   xs.dispose();
+   ys.dispose();
+
+}
+
+
+/*
+async function main() {
+  const model = await tf.loadModel('indexeddb://test')
+  model.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
+  model.predict(tf.tensor2d([[5]], [1, 1])).print();
+}
+
+main()
+*/
+
+
+
+document.getElementById("load_run").onclick=async function()
+{
+  const loadModel =await tf.loadLayersModel('indexeddb://test')
+  //await実行されたら以下を実行
+  model.predict(tf.tensor3d([[[1], [2]]])).print();
+}
+
+
+
+</script>
+</head>
+<body>
+</body>
+</html>
