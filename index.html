@@ -1,14 +1,40 @@
 <html>
 <head>
 <input type="file" multiple id="file" name="file" accept=".csv">
-<input type="file" multiple id="file_rslt" name="file_rslt" accept=".csv">
 <button id="study_run_modelSave">study_run_modelSave</button>
 <button id="load_run">load_run</button>
-<div>学習用データ</div>
+<br>
+<br>
+<label>item1 brand</label>
+<input type="text" id=item1>
+<div id=item11></div>
+<label>item2 variety</label>
+<input type="text" id=item2>
+<div id=item22></div>
+<br>
+<label>item3 style</label>
+<input type="text" id=item3>
+<div id=item33></div>
+<label>item4 country</label>
+<input type="text" id=item4>
+<div id=item44></div>
+<br>
+<label>item5</label>
+<input type="text" id=item5>
+<div id=item55></div>
+
+<br>
+<br>
+<div>学習用+最終列教師データ</div>
   <textarea id="text" rows="10" placeholder="学習用データ"></textarea>
+<br>
+<br>
+
+<br>
 <input type="text" id="search">
 <div id="exanswer"></div>
 <div id="exchange"></div>
+<br>
 <div>=== log（新しい順） ===</div>
 <div id="log"></div>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
@@ -23,38 +49,14 @@ var itemArr;
 var setToArr;
 var set;
 
-var reader2;
-var rsltArr;
-var tmp = [];
+
+var arr1=[];
+var arr2=[];
 
 
-//教師データ用
-// 結果ファイル選択ボタンの処理
-var el3 = document.getElementById("file_rslt");
-el3.onchange=function(e)
-{
- file_rslt = e.target.files;
- //file reader作成
- reader2 = new FileReader();
- reader2.readAsText(file_rslt[0]);
- reader2.onload = function()
- {
-   //console.log(reader2.result);
-
-  rsltArr = reader2.result.split("\n");
-　console.log(rsltArr);
-
-    for(var i = 0; i < rsltArr.length; i++) {
-        tmp.push(parseFloat(rsltArr.slice(i,i+1)));
-    }
-
-console.log(tmp);
- }
-}
-
-
-
-
+var testNum1,testNum2,testNum3,testNum4,testNum5;
+var testArr=[];
+var newTestArr=[];
 
 
 //訓練データ用
@@ -62,13 +64,13 @@ console.log(tmp);
 var el2 = document.getElementById("file");
 el2.onchange=function(e)
 {
- console.log('◆学習結果読込開始');
- log.innerHTML = '◆学習結果読込開始' + '<br>' + log.innerHTML;
- file = e.target.files;
- //file reader作成
- var reader = new FileReader();
- reader.readAsText(file[0]);
- reader.onload = function()
+  console.log('◆学習結果読込開始');
+  log.innerHTML = '◆学習結果読込開始' + '<br>' + log.innerHTML;
+  file = e.target.files;
+  //file reader作成
+  var reader = new FileReader();
+  reader.readAsText(file[0]);
+  reader.onload = function()
  {
     console.log(reader.result);
   //ファイルの中身を取得後に処理を行う
@@ -87,12 +89,13 @@ el2.onchange=function(e)
 
  var m=1;
  var a;
- var arr=[];
-                //データ数値化
+ var arr=[];//表示用
+
+      //データ数値化
       for (var i = 0; i < itemArr.length; i++)
 　　　　　//行
       {
-                //列
+        //列
       for (var j = 0; j < itemArr[i].length; j++)
         {
           //intにできる時はintにする
@@ -103,16 +106,16 @@ el2.onchange=function(e)
 
           a=itemArr[i][j];
 　　　　　
-        //次の行から同じ列だけ同一文字列あるか比較して、1以下の数値に置換
+        //同一文字列あるか比較して、数値に置換
 　　　　 for (var x = 0; x < itemArr.length; x++)
         {
          if(typeof a == 'string' && a == itemArr[x][j])
            {
-          //重複削除して、配列に戻す
+
+          //重複削除して、配列に戻す(表示用)
           arr.push(m + ':' +itemArr[x][j])
           set = new Set(arr);
           setToArr = Array.from(set);
-
           exchange.innerHTML=setToArr;
           itemArr[x][j]=itemArr[x][j].replace(itemArr[x][j],m);
           itemArr[x][j]=parseFloat(itemArr[x][j]);
@@ -124,9 +127,34 @@ el2.onchange=function(e)
       }
 
 
+//var arr1=Array(itemArr.length);
+//var arr2=Array(Array(1));
+//console.log(arr1);
+//console.log(arr1);
 
 
-      //itemArr:行数
+
+      //訓練データ配列
+      for (var i = 0; i < itemArr.length; i++)
+　　　 //行
+      {
+       // arr1[i]=itemArr[i];
+      //列
+      for (var j = 0; j < itemArr[i].length; j++)
+        {
+      //sliceはコピー作れる。先頭0で何文字目で切るかを決める
+　　　　　arr1[i]=itemArr[i].slice(0,itemArr[i].length-1);
+         arr2[i]=itemArr[i].slice(itemArr[i].length-1);
+        }
+      }
+console.log(arr1);
+console.log(arr2);
+console.log(itemArr);
+
+
+
+
+      //itemArr:行数,表示用
         for (var i = 0; i < itemArr.length; i++)
         {
          insert = insert + '[';
@@ -135,24 +163,30 @@ el2.onchange=function(e)
          insert = insert + itemArr[i][j] + ',' ;
          }
          insert = insert.slice( 0, -1 )
-        insert = insert +  '],';
+        　insert = insert +  '],';
         //insert = insert + '],';
-
         }
 
-
       document.getElementById('text').value=insert.slice( 0, -1 );
-      console.log(insert.slice( 0, -1 ));
+      //console.log(insert.slice( 0, -1 ));
       log.innerHTML = file[0].name + ' 取得完了' + '<br>' + log.innerHTML;
  };
 
 };
 
-
-
-
+//訓練開始！！
 document.getElementById("study_run_modelSave").onclick = async function()
 {
+
+console.log(testNum1)
+console.log(testNum2)
+console.log(testNum3)
+console.log(testNum4)
+console.log(testNum5)
+
+testArr.push(testNum1,testNum2,testNum3,testNum4,testNum5);
+newTestArr=testArr.filter(v => v);
+console.log(newTestArr);
   //tf.sequential モデルを構築
 
   //units:中間層(隠れ層)のunit数,inputShape:入力数(最小単位の列数)
@@ -173,8 +207,8 @@ document.getElementById("study_run_modelSave").onclick = async function()
 });
 */
  const model = tf.sequential();
- //inputShape:入力データセットの列数
- model.add(tf.layers.dense({units: 12, inputShape: [itemArr[0].length],activation:'elu'}));
+ //inputShape:入力データセットの列数:[4]
+ model.add(tf.layers.dense({units: 12, inputShape: [arr1[0].length],activation:'elu'}));
  console.log(itemArr[0].length);
  //model.add(tf.layers.dense({units: 64}));
  model.add(tf.layers.dense({units: 1,activation:'sigmoid'}));
@@ -195,10 +229,10 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
   console.log(itemArr[0].length);//4列
 
  //5行,3列,訓練データ
-  const xs = tf.tensor2d(itemArr,[itemArr.length,itemArr[0].length]);
+  const xs = tf.tensor2d(arr1,[arr1.length,arr1[0].length]);
   xs.print();
   // 4行1列,教師データ
-  const ys = tf.tensor2d(tmp,[itemArr.length,1]);
+  const ys = tf.tensor2d(arr2,[arr2.length,1]);
   // 学習実行,epochsエポック:一つの訓練データを何回繰り返して学習させるか
   await model.fit(xs, ys ,
   {batchSize: 4,
@@ -217,19 +251,15 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
      }
    }
   });
+
+
   // 予測 x=5の時のyは?
-  model.predict(tf.tensor2d([1,1,0.1],[1,itemArr[0].length])).print();//テストデータ。1行,3列
+  model.predict(tf.tensor2d(newTestArr,[1,newTestArr.length])).print();//テストデータ。1行,3列
   await model.save('indexeddb://test');
    xs.dispose();
    ys.dispose();
 
 }
-
-
-
-
-
-
 
 
 
@@ -244,20 +274,95 @@ async function main() {
 main()
 */
 document.getElementById("load_run").onclick=async function()
-{
+{//'localstorage://test' 'downloads://test'
   const loadModel =await tf.loadLayersModel('indexeddb://test')
   //await実行されたら以下を実行
-  loadModel.predict(tf.tensor2d([1,1,0.1],[1,itemArr[0].length])).print();
+  loadModel.predict(tf.tensor2d([4,1],[1,arr1[0].length])).print();
 }
+
+
+
 
 document.getElementById("search").onchange=function()
 {
-//var srchnum=setToArr.lastIndexOf(document.getElementById("search").value);
-//console.log(srchnum);
-
 //findは配列要素に特定文字列含んだら抽出、もできる！！
 const kekka = setToArr.find(item => item.indexOf(document.getElementById("search").value) !== -1 )
 document.getElementById("exanswer").innerHTML=kekka;
+}
+
+
+
+document.getElementById("item1").onchange=function()
+{
+let item = setToArr.find(item => item.indexOf(document.getElementById("item1").value) !== -1 )
+var pos = item.indexOf(":");
+if (pos < 0) {
+  console.log(str);
+} else {
+  item=item.substring(0, pos);
+}
+document.getElementById("item11").innerHTML=item;
+testNum1=parseFloat(item);
+}
+
+
+document.getElementById("item2").onchange=function()
+{
+let item = setToArr.find(item => item.indexOf(document.getElementById("item2").value) !== -1 )
+var pos = item.indexOf(":");
+if (pos < 0) {
+  console.log(str);
+} else {
+  item=item.substring(0, pos);
+}
+document.getElementById("item22").innerHTML=item;
+testNum2=parseFloat(item);
+}
+
+
+
+document.getElementById("item3").onchange=function()
+{
+let item = setToArr.find(item => item.indexOf(document.getElementById("item3").value) !== -1 )
+var pos = item.indexOf(":");
+if (pos < 0) {
+  console.log(str);
+} else {
+  item=item.substring(0, pos);
+}
+document.getElementById("item33").innerHTML=item;
+testNum3=parseFloat(item);
+}
+
+
+
+document.getElementById("item4").onchange=function()
+{
+let item = setToArr.find(item => item.indexOf(document.getElementById("item4").value) !== -1 )
+var pos = item.indexOf(":");
+if (pos < 0) {
+  console.log(str);
+} else {
+  item=item.substring(0, pos);
+}
+document.getElementById("item44").innerHTML=item;
+testNum4=parseFloat(item);
+}
+
+
+
+document.getElementById("item5").onchange=function()
+{
+//findは配列要素に特定文字列含んだら抽出、もできる！！
+let item = setToArr.find(item => item.indexOf(document.getElementById("item5").value) !== -1 )
+var pos = item.indexOf(":");
+if (pos < 0) {
+  console.log(str);
+} else {
+  item=item.substring(0, pos);
+}
+document.getElementById("item55").innerHTML=item;
+testNum5=parseFloat(item);
 }
 
 
