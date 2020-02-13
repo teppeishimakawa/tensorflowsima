@@ -1,21 +1,28 @@
 <html>
 <head>
+<label>teach_data cols</label>
+<input type="text" id=arr2col placeholder="3">
+<label>batch_size</label>
+<input type="text" id=batch placeholder="64">
 <input type="file" multiple id="file" name="file" accept=".csv">
-<button id="study_run_modelSave">study_run_modelSave</button>
-<button id="load_run">load_run</button>
+<br>
+<button id="study">study_modelSave</button>
+<input type="text" id=epoNum placeholder=50>
+<button id="run">run</button>
+<button id="load_run">modelLoad_run</button>
 <br>
 <br>
-<label>item1 brand</label>
+<label>item1</label>
 <input type="text" id=item1>
 <div id=item11></div>
-<label>item2 variety</label>
+<label>item2</label>
 <input type="text" id=item2>
 <div id=item22></div>
 <br>
-<label>item3 style</label>
+<label>item3</label>
 <input type="text" id=item3>
 <div id=item33></div>
-<label>item4 country</label>
+<label>item4</label>
 <input type="text" id=item4>
 <div id=item44></div>
 <br>
@@ -26,19 +33,24 @@
 <br>
 <br>
 <div>学習用+最終列教師データ</div>
-  <textarea id="text" rows="10" placeholder="学習用データ"></textarea>
+  <textarea id="text" rows="10" cols="100" placeholder="学習用データ"></textarea>
 <br>
 <br>
-
 <br>
+  <div id="runstat"></div>
+<br>
+  <div id="predict"></div>
+<br>
+<label>id search:</label>
 <input type="text" id="search">
 <div id="exanswer"></div>
-<div id="exchange"></div>
+<textarea id="exchange" rows="20" cols="100" placeholder="id変換一覧"></textarea>
 <br>
 <div>=== log（新しい順） ===</div>
 <div id="log"></div>
+<!--script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script-->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
 <script>
 var log=document.getElementById('log');
 var exchange=document.getElementById('exchange');
@@ -57,6 +69,35 @@ var arr2=[];
 var testNum1,testNum2,testNum3,testNum4,testNum5;
 var testArr=[];
 var newTestArr=[];
+
+var predict;
+var predictForLoad;
+
+var epoNum=50;
+
+var model;
+var plotArr=[];
+var arr2col;
+var batch;
+
+
+
+
+
+document.getElementById('arr2col').onchange=function()
+{
+//教師データ列数＝フラグ種数
+arr2col=parseInt(document.getElementById('arr2col').value);
+console.log(arr2col);
+}
+
+document.getElementById('batch').onchange=function()
+{
+//教師データ列数＝フラグ種数
+batch=parseInt(document.getElementById('batch').value);
+console.log(batch);
+}
+
 
 
 //訓練データ用
@@ -87,50 +128,62 @@ el2.onchange=function(e)
         itemArr[i] = lineArr[i].split(",");
         };
 
- var m=1;
  var a;
  var arr=[];//表示用
-
       //データ数値化
+
+    for (var j = 0; j < itemArr[0].length; j++)//列数。列変えて比較
+      {
+          var m=0;//列変わる際はカウント初期化
       for (var i = 0; i < itemArr.length; i++)
 　　　　　//行
-      {
-        //列
-      for (var j = 0; j < itemArr[i].length; j++)
         {
+
           //intにできる時はintにする
           if(isNaN(parseFloat(itemArr[i][j])) == false)
           {
           itemArr[i][j]=parseFloat(itemArr[i][j]);
           }
 
-          a=itemArr[i][j];
-　　　　　
-        //同一文字列あるか比較して、数値に置換
-　　　　 for (var x = 0; x < itemArr.length; x++)
+        if(itemArr[i][j] === null || itemArr[i][j] === undefined || itemArr[i][j] === "")
         {
-         if(typeof a == 'string' && a == itemArr[x][j])
-           {
+          itemArr[i][j]=0;
+        }
+        a=itemArr[i][j]//比較元セル
 
+
+          //if(typeof a == 'string'){m++}
+        //同一文字列あるか比較して、数値に置換
+　　　　 for (var x = 0; x < itemArr.length; x++)//行数。同列全行数比較
+        {
+          //何故か最後のstringが同じ文言でもスペース入って別文言と判断されたため、trimとtoString使用
+         if(typeof a == 'string' && a.trim() == itemArr[x][j].toString().trim())
+           {
           //重複削除して、配列に戻す(表示用)
-          arr.push(m + ':' +itemArr[x][j])
+          //arr.push(itemArr[x][j])
+          arr.push(m+':'+itemArr[x][j].toString().trim())
           set = new Set(arr);
           setToArr = Array.from(set);
-          exchange.innerHTML=setToArr;
+          exchange.value= setToArr;
+          //数値変換
           itemArr[x][j]=itemArr[x][j].replace(itemArr[x][j],m);
           itemArr[x][j]=parseFloat(itemArr[x][j]);
+
           //console.log(m);
 　　　　　　}
          }
+          if(typeof a == 'string')
+           {
+            m++;
+           }
        }
-       m=m+1;
       }
 
 
 //var arr1=Array(itemArr.length);
 //var arr2=Array(Array(1));
 //console.log(arr1);
-//console.log(arr1);
+//console.log(arr2);
 
 
 
@@ -142,9 +195,9 @@ el2.onchange=function(e)
       //列
       for (var j = 0; j < itemArr[i].length; j++)
         {
-      //sliceはコピー作れる。先頭0で何文字目で切るかを決める
-　　　　　arr1[i]=itemArr[i].slice(0,itemArr[i].length-1);
-         arr2[i]=itemArr[i].slice(itemArr[i].length-1);
+      //sliceはコピー作れる。先頭0で何個目で切るかを決める
+　　　　　arr1[i]=itemArr[i].slice(0,itemArr[i].length-arr2col);
+         arr2[i]=itemArr[i].slice(itemArr[i].length-arr2col);
         }
       }
 console.log(arr1);
@@ -174,19 +227,11 @@ console.log(itemArr);
 
 };
 
-//訓練開始！！
-document.getElementById("study_run_modelSave").onclick = async function()
+//////////////////訓練開始！！
+document.getElementById("study").onclick = async function()
 {
-
-console.log(testNum1)
-console.log(testNum2)
-console.log(testNum3)
-console.log(testNum4)
-console.log(testNum5)
-
-testArr.push(testNum1,testNum2,testNum3,testNum4,testNum5);
-newTestArr=testArr.filter(v => v);
-console.log(newTestArr);
+document.getElementById("runstat").innerHTML="";
+document.getElementById("predict").innerHTML="";
   //tf.sequential モデルを構築
 
   //units:中間層(隠れ層)のunit数,inputShape:入力数(最小単位の列数)
@@ -206,14 +251,33 @@ console.log(newTestArr);
     loss: 'binaryCrossentropy'
 });
 */
- const model = tf.sequential();
+ model = tf.sequential();
  //inputShape:入力データセットの列数:[4]
- model.add(tf.layers.dense({units: 12, inputShape: [arr1[0].length],activation:'elu'}));
- console.log(itemArr[0].length);
- //model.add(tf.layers.dense({units: 64}));
+
+//activation:'elu','softmax','sigmoid'
+// loss: 'binaryCrossentropy' 'meanSquaredError' 'categoricalCrossentropy'
+//tf.train.adamax(),tf.train.adam()やtf.train.rmsprop()などはtf.train.sgd()の亜種
+
+ model.add(tf.layers.dense({units: 10,activation:'elu',inputShape: [arr1[0].length]}));
+ //console.log(itemArr[0].length);
+ //model.add(tf.layers.dense({units: 32,useBias:true}));
+ //model.add(tf.layers.dense({units: 1,useBias:true,activation:'sigmoid'}));
+ model.add(tf.layers.dense({units:arr2[0].length,activation:'sigmoid'}));
+
+  //学習実行,sgd:確率的勾配降下法オプティマイザ。tf.train.rmsprop(0.01)超重要
+ //model.compile({loss: 'meanSquaredError', optimizer:tf.train.rmsprop(0.01)});
+const learningRate = 0.01;
+const optimizer = tf.train.adam(learningRate);
+ model.compile({ optimizer: optimizer,loss: 'meanSquaredError',metrics:['accuracy'] });
+
+
+/*ノード検知で良かった組み合わせ
+ model.add(tf.layers.dense({units: 12,inputShape: [arr1[0].length],activation:'elu' }));
  model.add(tf.layers.dense({units: 1,activation:'sigmoid'}));
-  //学習実行,sgd:確率的勾配降下法オプティマイザ.tf.train.rmsprop(0.01)長重要
-  model.compile({loss: 'meanSquaredError', optimizer:tf.train.rmsprop(0.01)});
+ model.compile({loss: 'meanSquaredError', optimizer:tf.train.rmsprop(0.01)});
+*/
+
+
   // 学習用データ
 
 /*ex.
@@ -232,11 +296,11 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
   const xs = tf.tensor2d(arr1,[arr1.length,arr1[0].length]);
   xs.print();
   // 4行1列,教師データ
-  const ys = tf.tensor2d(arr2,[arr2.length,1]);
+  const ys = tf.tensor2d(arr2,[arr2.length,arr2[0].length]);
   // 学習実行,epochsエポック:一つの訓練データを何回繰り返して学習させるか
   await model.fit(xs, ys ,
-  {batchSize: 4,
-    epochs: 50,
+  {batchSize: batch,
+    epochs: epoNum,
      // １回の訓練が終わるたびに呼び出されるコールバック関数
    callbacks:
    {
@@ -244,25 +308,145 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
      {
        // 繰り返しの回数と損失値を出力
        console.log('繰り返し回数'+ epoch);
-       console.log('ロス' + logs.loss)
+       console.log('ロス' + logs.loss);
+       document.getElementById("runstat").innerHTML
+       ='繰り返し回数:'+ epoch + ',' + 'ロス:' + logs.loss;
        const lossData = [epoch,logs.loss];
+
+       plotArr.push({epoch:epoch , loss:logs.loss});
        // 画面がフリーズしないように次のフレームに進む
        await tf.nextFrame();
-     }
+
+
+
+//描画
+async function getData() {
+const cleaned =plotArr;
+  //  const cleaned =[{mpg: 15, horsepower: 165},{}];
+    return cleaned;
+}
+//plot元dataはobject形式
+async function run(){
+    const data = await getData();
+    const values = data.map(d => ({
+        x: d.epoch,
+        y: d.loss,
+    }));
+
+    tfvis.render.scatterplot(
+        {name: 'epoch v loss'},
+        {values},
+        {
+            xLabel: 'epoch',
+            yLabel: 'loss',
+            height: 300
+        }
+    );
+
+    console.log(data);
+}
+
+run();
+
+
+
+/*
+async function getData() {
+    const carsDataReq = await fetch('https://storage.googleapis.com/tfjs-tutorials/carsData.json');
+    const carsData = await carsDataReq.json();
+    const cleaned = carsData.map(car => ({
+        mpg: car.Miles_per_Gallon,
+        horsepower: car.Horsepower,
+    }))
+    .filter(car => (car.mpg != null && car.horsepower != null));
+
+    console.log(carsDataReq);
+    //console.log(carsData);
+
+    return cleaned;
+}
+
+async function run(){
+    const data = await getData();
+    const values = data.map(d => ({
+        x: d.horsepower,
+        y: d.mpg,
+    }));
+
+    tfvis.render.scatterplot(
+        {name: 'Horsepower v MPG'},
+        {values},
+        {
+            xLabel: 'Horsepower',
+            yLabel: 'MPG',
+            height: 300
+        }
+    );
+
+    console.log(data);
+}
+
+run();
+*/
+
+     }//onEpochEnd
    }
   });
 
-
-  // 予測 x=5の時のyは?
-  model.predict(tf.tensor2d(newTestArr,[1,newTestArr.length])).print();//テストデータ。1行,3列
-  await model.save('indexeddb://test');
+   await model.save('indexeddb://test');
    xs.dispose();
    ys.dispose();
 
 }
 
 
+//////////////////run！！
+document.getElementById("run").onclick = async function()
+{
+document.getElementById("runstat").innerHTML="";
+document.getElementById("predict").innerHTML="";
+console.log(testNum1)
+console.log(testNum2)
+console.log(testNum3)
+console.log(testNum4)
+console.log(testNum5)
 
+testArr.length=0;
+testArr.push(testNum1,testNum2,testNum3,testNum4,testNum5);
+//x=null,undefined,""以外の時に値を返して新規配列を作る。filterはreturnされた値のみを
+//返して新規配列作るmethod
+newTestArr=testArr.filter(function(x){
+  return !(x === null || x === undefined || x === "");
+})
+//newTestArr=testArr.filter(v => v);
+console.log(newTestArr);
+
+
+  // 予測 x=5の時のyは?
+  predict=model.predict(tf.tensor2d(newTestArr,[1,newTestArr.length]))//テストデータ。1行,3列
+  predict.print();
+  //await model.save('indexeddb://test');
+  document.getElementById("predict").innerHTML=predict;
+
+
+/*
+const series1 = Array(100).fill(0)
+  .map(y => Math.random() * 100 - (Math.random() * 50))
+  .map((y, x) => ({ x, y, }));
+
+  console.log(series1);
+
+const series2 = Array(100).fill(0)
+  .map(y => Math.random() * 100 - (Math.random() * 150))
+  .map((y, x) => ({ x, y, }));
+
+const data = { values: [series1, series2], ['First', 'Second'] }
+
+const surface = { name: 'Scatterplot', tab: 'Charts' };
+tfvis.render.scatterplot(surface, data);
+*/
+
+}
 
 /*
 async function main() {
@@ -273,11 +457,26 @@ async function main() {
 
 main()
 */
+
+/////////////////modelLoad_run!!/////////////////////////////
 document.getElementById("load_run").onclick=async function()
 {//'localstorage://test' 'downloads://test'
+document.getElementById("runstat").innerHTML="";
+document.getElementById("predict").innerHTML="";
+testArr.length=0;
+testArr.push(testNum1,testNum2,testNum3,testNum4,testNum5);
+newTestArr=testArr.filter(function(x){
+  return !(x === null || x === undefined || x === "");
+})
+console.log(newTestArr);
+
+
   const loadModel =await tf.loadLayersModel('indexeddb://test')
   //await実行されたら以下を実行
-  loadModel.predict(tf.tensor2d([4,1],[1,arr1[0].length])).print();
+  predictForLoad=loadModel.predict(tf.tensor2d(newTestArr,[1,newTestArr.length]));
+  predictForLoad.print();
+  document.getElementById("predict").innerHTML=predictForLoad;
+  console.log(newTestArr);
 }
 
 
@@ -292,8 +491,29 @@ document.getElementById("exanswer").innerHTML=kekka;
 
 
 
-document.getElementById("item1").onchange=function()
+
+document.getElementById("epoNum").onchange=function()
 {
+epoNum=document.getElementById("epoNum").value;
+}
+
+
+
+
+
+
+
+
+
+
+document.getElementById("item1").onchange=function()
+{//数字じゃないがfalseの時＝数字のとき
+  if(isNaN(parseFloat(document.getElementById("item1").value)) == false )
+ {
+  document.getElementById("item11").innerHTML=document.getElementById("item1").value;
+  testNum1=parseFloat(document.getElementById("item1").value);
+ }else
+ {
 let item = setToArr.find(item => item.indexOf(document.getElementById("item1").value) !== -1 )
 var pos = item.indexOf(":");
 if (pos < 0) {
@@ -301,13 +521,22 @@ if (pos < 0) {
 } else {
   item=item.substring(0, pos);
 }
-document.getElementById("item11").innerHTML=item;
-testNum1=parseFloat(item);
-}
+   document.getElementById("item11").innerHTML=item;
+   testNum1=parseFloat(item);
+  }
+ }
 
 
 document.getElementById("item2").onchange=function()
 {
+
+  if(isNaN(parseFloat(document.getElementById("item2").value)) == false)
+ {
+  document.getElementById("item22").innerHTML=document.getElementById("item2").value;
+  testNum2=parseFloat(document.getElementById("item2").value);
+ }else
+ {
+
 let item = setToArr.find(item => item.indexOf(document.getElementById("item2").value) !== -1 )
 var pos = item.indexOf(":");
 if (pos < 0) {
@@ -318,11 +547,19 @@ if (pos < 0) {
 document.getElementById("item22").innerHTML=item;
 testNum2=parseFloat(item);
 }
-
+}
 
 
 document.getElementById("item3").onchange=function()
 {
+
+  if(isNaN(parseFloat(document.getElementById("item3").value)) == false)
+ {
+  document.getElementById("item33").innerHTML=document.getElementById("item3").value;
+  testNum3=parseFloat(document.getElementById("item3").value);
+ }else
+ {
+
 let item = setToArr.find(item => item.indexOf(document.getElementById("item3").value) !== -1 )
 var pos = item.indexOf(":");
 if (pos < 0) {
@@ -333,11 +570,19 @@ if (pos < 0) {
 document.getElementById("item33").innerHTML=item;
 testNum3=parseFloat(item);
 }
-
+}
 
 
 document.getElementById("item4").onchange=function()
 {
+
+  if(isNaN(parseFloat(document.getElementById("item4").value)) == false)
+ {
+  document.getElementById("item44").innerHTML=document.getElementById("item4").value;
+  testNum4=parseFloat(document.getElementById("item4").value);
+ }else
+ {
+
 let item = setToArr.find(item => item.indexOf(document.getElementById("item4").value) !== -1 )
 var pos = item.indexOf(":");
 if (pos < 0) {
@@ -348,11 +593,19 @@ if (pos < 0) {
 document.getElementById("item44").innerHTML=item;
 testNum4=parseFloat(item);
 }
-
+}
 
 
 document.getElementById("item5").onchange=function()
 {
+
+  if(isNaN(parseFloat(document.getElementById("item5").value)) == false)
+ {
+  document.getElementById("item55").innerHTML=document.getElementById("item5").value;
+  testNum5=parseFloat(document.getElementById("item5").value);
+ }else
+ {
+
 //findは配列要素に特定文字列含んだら抽出、もできる！！
 let item = setToArr.find(item => item.indexOf(document.getElementById("item5").value) !== -1 )
 var pos = item.indexOf(":");
@@ -364,6 +617,8 @@ if (pos < 0) {
 document.getElementById("item55").innerHTML=item;
 testNum5=parseFloat(item);
 }
+}
+
 
 
 
