@@ -27,25 +27,36 @@
 <label>bin</label>
 <input id="weights-upload" type="file" style="width:200"/>
 <button id="file_load_run">model_file_Load_run</button>
+<br>
+<button id="test_run">test_run</button>
 
 <br>
 <br>
 <label>item1:maker</label>
-<input type="text" id=item1>
+<select name="name1" id="item1">
+<option> </option>
+</select>
 <div id=item11></div>
 <label>item2:taste</label>
-<input type="text" id=item2>
+<select name="name2" id="item2">
+<option> </option>
+</select>
 <div id=item22></div>
 <br>
 <label>item3:package</label>
-<input type="text" id=item3>
+<select name="name3" id="item3">
+<option> </option>
+</select>
 <div id=item33></div>
 <label>item4:country</label>
-<input type="text" id=item4>
+<select name="name4" id="item4">
+<option> </option>
+</select>
 <div id=item44></div>
 <br>
 <label>item5</label>
-<input type="text" id=item5>
+<select name="name5" id="item5">
+</select>
 <div id=item55></div>
 
 <br>
@@ -68,10 +79,23 @@ var log=document.getElementById('log');
 var exchange=document.getElementById('exchange');
 var insert='';
 var stdy_rslt;
-var lineArr;
-var itemArr;
-var setToArr;
+var lineArr=[];
+var itemArr=[];
+var setToArr=[];
 var set;
+
+var setToArr_1=[];
+var set_1;
+var arr_1=[];
+var setToArr_2=[];
+var set_2;
+var arr_2=[];
+var setToArr_3=[];
+var set_3;
+var arr_3=[];
+var setToArr_4=[];
+var set_4;
+var arr_4=[];
 
 var arr1=[];
 var arr2=[];
@@ -95,11 +119,21 @@ var item=[0,1,2,3,4,5];
  var a;
  var arr=[];//表示用
 
+ var loadModel;
+
+ var option,option2,option3,option4;
+ var select,select2,select3,select4;
+
+select = document.getElementById("item1");
+select2 = document.getElementById("item2");
+select3 = document.getElementById("item3");
+select4 = document.getElementById("item4");
+
 
 
 document.getElementById('arr2col').onchange=function()
 {
-//教師データ列数＝フラグ種数
+//教師データ列数＝1フラグ種数
 arr2col=parseInt(document.getElementById('arr2col').value);
 console.log(arr2col);
 }
@@ -113,11 +147,277 @@ console.log(batch);
 
 
 
+///////////////////////////////
+//デフォルト、ramen0217読み込み
+//CSVファイルを読み込む関数getCSV()の定義
+ function getCSV()
+{
+
+insert="";
+itemArr.length=0;
+lineArr.length=0;
+arr.length=0;
+arr1.length=0;
+arr2.length=0;
+document.getElementById("text").value="";
+document.getElementById("exchange").value="";
+
+
+
+  console.log('◆学習結果読込開始');
+  log.innerHTML = '◆学習結果読込開始' + '<br>' + log.innerHTML;
+
+    var req = new XMLHttpRequest(); // HTTPでファイルを読み込むためのXMLHttpRrequestオブジェクトを生成
+    req.open("get", "ramen-train0217.csv", true); // アクセスするファイルを指定
+    req.send(null); // HTTPリクエストの発行
+    // レスポンスが返ってきたらconvertCSVtoArray()を呼ぶ
+    req.onload = function()
+    {
+  CSVtoArray(req.responseText); // 渡されるのは読み込んだCSVデータ
+    }
+ //     loadModel = await tf.loadLayersModel("./test.json");
+}
+// 読み込んだCSVデータを二次元配列に変換する関数convertCSVtoArray()の定義
+ function CSVtoArray(str)
+ { // 読み込んだCSVデータが文字列として渡される
+    //itemArr = []; // 最終的な二次元配列を入れるための配列
+    lineArr = str.split("\n"); // 改行を区切り文字として行を要素とした配列を生成
+
+    // 各行ごとにカンマで区切った文字列を要素とした二次元配列を生成
+    for(var i=0;i<lineArr.length;++i){
+        itemArr[i] = lineArr[i].split(',');
+    }
+
+      //データ数値化
+
+    for (var j = 0; j < itemArr[0].length; j++)//列数。列変えて比較
+      {
+          var m=0;//列変わる際はカウント初期化
+      for (var i = 0; i < itemArr.length; i++)
+　　　　　//行
+        {
+
+          //intにできる時はintにする
+          if(isNaN(parseFloat(itemArr[i][j])) == false)
+          {
+          itemArr[i][j]=parseFloat(itemArr[i][j]);
+          }
+
+        if(itemArr[i][j] === null || itemArr[i][j] === undefined || itemArr[i][j] === "")
+        {
+          itemArr[i][j]=0;
+        }
+        a=itemArr[i][j]//比較元セル
+
+
+        //同一文字列あるか比較して、数値に置換
+　　　　 for (var x = 0; x < itemArr.length; x++)//行数。同列全行数比較
+        {
+          //何故か最後のstringが同じ文言でもスペース入って別文言と判断されたため、trimとtoString使用
+         if(typeof a == 'string' && a.trim() == itemArr[x][j].toString().trim())
+           {
+          //new Setで重複削除して、配列に戻す(表示用)
+          //arr.push(itemArr[x][j])
+          arr.push(m +':'+itemArr[x][j].toString().trim())
+          set = new Set(arr);
+          setToArr = Array.from(set);
+          exchange.value= setToArr;
+
+  if(isNaN(parseFloat(itemArr[x][0])) == true)
+  {
+          arr_1.push(itemArr[x][0].toString().trim())
+          set_1 = new Set(arr_1);
+          setToArr_1 = Array.from(set_1).sort();
+  }
+  if(isNaN(parseFloat(itemArr[x][1])) == true)
+  {
+          arr_2.push(itemArr[x][1].toString().trim())
+          set_2 = new Set(arr_2);
+          setToArr_2 = Array.from(set_2).sort();
+  }
+  if(isNaN(parseFloat(itemArr[x][2])) == true)
+  {
+          arr_3.push(itemArr[x][2].toString().trim())
+          set_3 = new Set(arr_3);
+          setToArr_3 = Array.from(set_3).sort();
+  }
+  if(isNaN(parseFloat(itemArr[x][3])) == true)
+  {
+          arr_4.push(itemArr[x][3].toString().trim())
+          set_4 = new Set(arr_4);
+          setToArr_4 = Array.from(set_4).sort();
+  }
+
+          //数値変換
+          itemArr[x][j]=itemArr[x][j].replace(itemArr[x][j],m);
+          itemArr[x][j]=parseFloat(itemArr[x][j]);
+
+//console.log(setToArr);
+
+　　　　　　}
+         }
+          if(typeof a == 'string')
+           {
+            m=m+0.01;
+            m=Math.round(m*100)/100
+           }
+       }
+      }
+
+      //訓練データ配列
+      for (var i = 0; i < itemArr.length; i++)
+　　　 //行
+      {
+       // arr1[i]=itemArr[i];
+      //列
+      for (var j = 0; j < itemArr[i].length; j++)
+        {
+      //sliceはコピー作れる。先頭0で何個目で切るかを決める
+　　　　　arr1[i]=itemArr[i].slice(0,itemArr[i].length-arr2col);
+         arr2[i]=itemArr[i].slice(itemArr[i].length-arr2col);
+        }
+      }
+//console.log(arr1);
+//console.log(arr2);
+//console.log(itemArr);
+
+      //itemArr:行数,表示用
+        for (var i = 0; i < itemArr.length; i++)
+        {
+         insert = insert + '[';
+        for (var j = 0; j < itemArr[i].length; j++)
+         {
+         insert = insert + itemArr[i][j] + ',' ;
+         }
+         insert = insert.slice( 0, -1 )
+        　insert = insert +  '],';
+        }
+
+      document.getElementById('text').value=insert.slice( 0, -1 );
+      //console.log(insert.slice( 0, -1 ));
+      log.innerHTML =  ' 取得完了' + '<br>' + log.innerHTML;
+
+
+
+
+
+ for(i=0;i<setToArr_1.length;i++)
+ {
+
+ option = document.createElement("option");
+ option.text = setToArr_1[i];
+ option.value = setToArr_1[i];
+ select.appendChild(option);
+ }
+
+
+ for(i=0;i<setToArr_2.length;i++)
+ {
+
+ option2 = document.createElement("option");
+ option2.text = setToArr_2[i];
+ option2.value = setToArr_2[i];
+ select2.appendChild(option2);
+ }
+
+
+ for(i=0;i<setToArr_3.length;i++)
+ {
+
+ option3 = document.createElement("option");
+ option3.text = setToArr_3[i];
+ option3.value = setToArr_3[i];
+ select3.appendChild(option3);
+ }
+
+
+ for(i=0;i<setToArr_4.length;i++)
+ {
+
+ option4 = document.createElement("option");
+ option4.text = setToArr_4[i];
+ option4.value = setToArr_4[i];
+ select4.appendChild(option4);
+ }
+
+
+}
+//getCSV(); //最初に実行される
+///////////////////////////////
+
+
+
+
+
+
+
+
+
+
 //訓練データ用
 // ファイル選択ボタンの処理
 var el2 = document.getElementById("file");
+//el2.onload=function(e)
 el2.onchange=function(e)
 {
+
+insert="";
+itemArr.length=0;
+lineArr.length=0;
+arr.length=0;
+arr1.length=0;
+arr2.length=0;
+setToArr.length=0;
+setToArr_1.length=0;
+setToArr_2.length=0;
+setToArr_3.length=0;
+setToArr_4.length=0;
+document.getElementById("text").value="";
+document.getElementById("exchange").value="";
+
+
+if (select.hasChildNodes())
+{
+    while (select.childNodes.length > 0)
+    {
+      select.removeChild(select.firstChild)
+    }
+    select.appendChild(document.createElement("option"))
+    document.createElement("option").value="";
+}
+
+if (select2.hasChildNodes())
+{
+    while (select2.childNodes.length > 0)
+    {
+      select2.removeChild(select2.firstChild)
+    }
+    select2.appendChild(document.createElement("option"))
+    document.createElement("option").value="";
+}
+
+if (select3.hasChildNodes())
+{
+    while (select3.childNodes.length > 0)
+    {
+      select3.removeChild(select3.firstChild)
+    }
+    select3.appendChild(document.createElement("option"))
+    document.createElement("option").value="";
+}
+
+if (select4.hasChildNodes())
+{
+    while (select4.childNodes.length > 0)
+    {
+      select4.removeChild(select4.firstChild)
+    }
+    select4.appendChild(document.createElement("option"))
+    document.createElement("option").value="";
+}
+
+
+
   console.log('◆学習結果読込開始');
   log.innerHTML = '◆学習結果読込開始' + '<br>' + log.innerHTML;
   file = e.target.files;
@@ -134,7 +434,7 @@ el2.onchange=function(e)
       // 行単位で配列にする
       lineArr = reader.result.split("\n");
       // 行と列の二次元配列にする
-      itemArr = [];
+      //itemArr = [];
 
         for (var i = 0; i < lineArr.length; i++)
         {
@@ -176,6 +476,35 @@ el2.onchange=function(e)
           set = new Set(arr);
           setToArr = Array.from(set);
           exchange.value= setToArr;
+
+
+  if(isNaN(parseFloat(itemArr[x][0])) == true)
+  {
+          arr_1.push(itemArr[x][0].toString().trim())
+          set_1 = new Set(arr_1);
+          setToArr_1 = Array.from(set_1).sort();
+  }
+  if(isNaN(parseFloat(itemArr[x][1])) == true)
+  {
+          arr_2.push(itemArr[x][1].toString().trim())
+          set_2 = new Set(arr_2);
+          setToArr_2 = Array.from(set_2).sort();
+  }
+  if(isNaN(parseFloat(itemArr[x][2])) == true)
+  {
+          arr_3.push(itemArr[x][2].toString().trim())
+          set_3 = new Set(arr_3);
+          setToArr_3 = Array.from(set_3).sort();
+  }
+  if(isNaN(parseFloat(itemArr[x][3])) == true)
+  {
+          arr_4.push(itemArr[x][3].toString().trim())
+          set_4 = new Set(arr_4);
+          setToArr_4 = Array.from(set_4).sort();
+  }
+
+
+
           //数値変換
           itemArr[x][j]=itemArr[x][j].replace(itemArr[x][j],m);
           itemArr[x][j]=parseFloat(itemArr[x][j]);
@@ -210,9 +539,9 @@ el2.onchange=function(e)
          arr2[i]=itemArr[i].slice(itemArr[i].length-arr2col);
         }
       }
-console.log(arr1);
-console.log(arr2);
-console.log(itemArr);
+//console.log(arr1);
+//console.log(arr2);
+//console.log(itemArr);
 
 
 
@@ -231,6 +560,49 @@ console.log(itemArr);
       document.getElementById('text').value=insert.slice( 0, -1 );
       //console.log(insert.slice( 0, -1 ));
       log.innerHTML = file[0].name + ' 取得完了' + '<br>' + log.innerHTML;
+
+
+
+ for(i=0;i<setToArr_1.length;i++)
+ {
+ 
+ option = document.createElement("option");
+ option.text = setToArr_1[i];
+ option.value = setToArr_1[i];
+ select.appendChild(option);
+ }
+
+
+ for(i=0;i<setToArr_2.length;i++)
+ {
+
+ option2 = document.createElement("option");
+ option2.text = setToArr_2[i];
+ option2.value = setToArr_2[i];
+ select2.appendChild(option2);
+ }
+
+
+ for(i=0;i<setToArr_3.length;i++)
+ {
+
+ option3 = document.createElement("option");
+ option3.text = setToArr_3[i];
+ option3.value = setToArr_3[i];
+ select3.appendChild(option3);
+ }
+
+
+ for(i=0;i<setToArr_4.length;i++)
+ {
+
+ option4 = document.createElement("option");
+ option4.text = setToArr_4[i];
+ option4.value = setToArr_4[i];
+ select4.appendChild(option4);
+ }
+
+
  };
 
 
@@ -304,9 +676,9 @@ const x = tf.tensor2d([1, 2, 4, 3], [2, 2]);
 
   //引数2番目は4列2行のshapeを表す。[行,列]
   //x:訓練データ,y:教師データ
-  console.log(itemArr);
-  console.log(itemArr.length);//行
-  console.log(itemArr[0].length);//4列
+ // console.log(itemArr);
+ // console.log(itemArr.length);//行
+ // console.log(itemArr[0].length);//4列
 
  //5行,3列,訓練データ
   const xs = tf.tensor2d(arr1,[arr1.length,arr1[0].length]);
@@ -359,7 +731,7 @@ async function run(){
         }
     );
 
-    console.log(data);
+    //console.log(data);
 }
 
 run();
@@ -442,7 +814,7 @@ console.log(newTestArr);
 const jsonUpload = document.getElementById('json-upload');
 const weightsUpload = document.getElementById('weights-upload');
 
-const loadModel = await tf.loadLayersModel(
+    loadModel = await tf.loadLayersModel(
     tf.io.browserFiles([jsonUpload.files[0], weightsUpload.files[0]]));
 
 
@@ -522,6 +894,60 @@ console.log(newTestArr);
   console.log(newTestArr);
   console.log(Array.from(values))
 }
+
+
+
+
+
+
+///////////////デフォルトのtest.json,binでtest_run
+document.getElementById("test_run").onclick = async function()
+{
+document.getElementById("runstat").innerHTML="";
+document.getElementById("predict").innerHTML="";
+console.log(testNum1)
+console.log(testNum2)
+console.log(testNum3)
+console.log(testNum4)
+console.log(testNum5)
+
+testArr.length=0;
+testArr.push(testNum1,testNum2,testNum3,testNum4,testNum5);
+//x=null,undefined,""以外の時に値を返して新規配列を作る。filterはreturnされた値のみを
+//返して新規配列作るmethod
+newTestArr=testArr.filter(function(x){
+  return !(x === null || x === undefined || x === "");
+})
+//newTestArr=testArr.filter(v => v);
+console.log(newTestArr);
+
+
+loadModel = await tf.loadLayersModel("./test.json");;
+
+
+  //await実行されたら以下を実行
+  predictForLoad=loadModel.predict(tf.tensor2d(newTestArr,[1,newTestArr.length]));
+  //predictForLoad.print();
+  //const tensor = tf.outerProduct(predictForLoad,null);
+  var values = predictForLoad.dataSync();
+  var makeArr=Array.from(values);
+  //mapで配列に同じ処理。floorで切り捨て
+  var ValueArr=makeArr.map(function(x){return Math.floor(x*100)/100});
+  var maxValue=Math.max.apply(null, ValueArr);
+  var maxindex=ValueArr.indexOf(maxValue);
+
+  document.getElementById("predict").innerHTML=predictForLoad + "<br>" + ValueArr +
+  "<br>" + maxValue + "の確率で" + item[maxindex] + "点です";
+  console.log(newTestArr);
+  console.log(Array.from(values))
+}
+///////////////
+
+
+
+
+
+
 
 
 
