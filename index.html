@@ -1,28 +1,46 @@
 <html>
 <head>
+<div>=== log（新しい順） ===</div>
+<div id="log"></div>
+<br>
+<div id="runstat"></div>
+<br>
+<div id="predict"></div>
+<br>
+<br>
 <label>teach_data cols</label>
-<input type="text" id=arr2col placeholder="3">
+<input type="text" id=arr2col placeholder="6">
 <label>batch_size</label>
-<input type="text" id=batch placeholder="64">
+<input type="text" id=batch placeholder="128">
+<br>
 <input type="file" multiple id="file" name="file" accept=".csv">
 <br>
-<button id="study">study_modelSave</button>
+<label>epochs</label>
 <input type="text" id=epoNum placeholder=50>
-<button id="run">run</button>
-<button id="load_run">modelLoad_run</button>
+<br>
+<button id="study">study_modelSave_indexeddb</button>
+<button id="load_run">model_indexeddb_Load_run</button>
+<br>
+<button id="save">modelSave_file</button>
+<label>json</label>
+<input id="json-upload" type="file" style="width:200"/>
+<label>bin</label>
+<input id="weights-upload" type="file" style="width:200"/>
+<button id="file_load_run">model_file_Load_run</button>
+
 <br>
 <br>
-<label>item1</label>
+<label>item1:maker</label>
 <input type="text" id=item1>
 <div id=item11></div>
-<label>item2</label>
+<label>item2:taste</label>
 <input type="text" id=item2>
 <div id=item22></div>
 <br>
-<label>item3</label>
+<label>item3:package</label>
 <input type="text" id=item3>
 <div id=item33></div>
-<label>item4</label>
+<label>item4:country</label>
 <input type="text" id=item4>
 <div id=item44></div>
 <br>
@@ -32,22 +50,16 @@
 
 <br>
 <br>
-<div>学習用+最終列教師データ</div>
+<div>学習用+最終列教師データ/登場する数値は2桁に抑える</div>
   <textarea id="text" rows="10" cols="100" placeholder="学習用データ"></textarea>
 <br>
 <br>
-<br>
-  <div id="runstat"></div>
-<br>
-  <div id="predict"></div>
 <br>
 <label>id search:</label>
 <input type="text" id="search">
 <div id="exanswer"></div>
 <textarea id="exchange" rows="20" cols="100" placeholder="id変換一覧"></textarea>
 <br>
-<div>=== log（新しい順） ===</div>
-<div id="log"></div>
 <!--script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script-->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
@@ -61,10 +73,8 @@ var itemArr;
 var setToArr;
 var set;
 
-
 var arr1=[];
 var arr2=[];
-
 
 var testNum1,testNum2,testNum3,testNum4,testNum5;
 var testArr=[];
@@ -77,10 +87,13 @@ var epoNum=50;
 
 var model;
 var plotArr=[];
-var arr2col;
-var batch;
+var arr2col=6;
+var batch=128;
 
+var item=[0,1,2,3,4,5];
 
+ var a;
+ var arr=[];//表示用
 
 
 
@@ -128,8 +141,7 @@ el2.onchange=function(e)
         itemArr[i] = lineArr[i].split(",");
         };
 
- var a;
- var arr=[];//表示用
+
       //データ数値化
 
     for (var j = 0; j < itemArr[0].length; j++)//列数。列変えて比較
@@ -152,16 +164,15 @@ el2.onchange=function(e)
         a=itemArr[i][j]//比較元セル
 
 
-          //if(typeof a == 'string'){m++}
         //同一文字列あるか比較して、数値に置換
 　　　　 for (var x = 0; x < itemArr.length; x++)//行数。同列全行数比較
         {
           //何故か最後のstringが同じ文言でもスペース入って別文言と判断されたため、trimとtoString使用
          if(typeof a == 'string' && a.trim() == itemArr[x][j].toString().trim())
            {
-          //重複削除して、配列に戻す(表示用)
+          //new Setで重複削除して、配列に戻す(表示用)
           //arr.push(itemArr[x][j])
-          arr.push(m+':'+itemArr[x][j].toString().trim())
+          arr.push(m +':'+itemArr[x][j].toString().trim())
           set = new Set(arr);
           setToArr = Array.from(set);
           exchange.value= setToArr;
@@ -169,23 +180,22 @@ el2.onchange=function(e)
           itemArr[x][j]=itemArr[x][j].replace(itemArr[x][j],m);
           itemArr[x][j]=parseFloat(itemArr[x][j]);
 
-          //console.log(m);
+//console.log(setToArr);
+
 　　　　　　}
          }
           if(typeof a == 'string')
            {
-            m++;
+            m=m+0.01;
+            m=Math.round(m*100)/100
            }
        }
       }
-
 
 //var arr1=Array(itemArr.length);
 //var arr2=Array(Array(1));
 //console.log(arr1);
 //console.log(arr2);
-
-
 
       //訓練データ配列
       for (var i = 0; i < itemArr.length; i++)
@@ -206,7 +216,6 @@ console.log(itemArr);
 
 
 
-
       //itemArr:行数,表示用
         for (var i = 0; i < itemArr.length; i++)
         {
@@ -217,13 +226,16 @@ console.log(itemArr);
          }
          insert = insert.slice( 0, -1 )
         　insert = insert +  '],';
-        //insert = insert + '],';
         }
 
       document.getElementById('text').value=insert.slice( 0, -1 );
       //console.log(insert.slice( 0, -1 ));
       log.innerHTML = file[0].name + ' 取得完了' + '<br>' + log.innerHTML;
  };
+
+
+
+
 
 };
 
@@ -254,11 +266,15 @@ document.getElementById("predict").innerHTML="";
  model = tf.sequential();
  //inputShape:入力データセットの列数:[4]
 
-//activation:'elu','softmax','sigmoid'
-// loss: 'binaryCrossentropy' 'meanSquaredError' 'categoricalCrossentropy'
-//tf.train.adamax(),tf.train.adam()やtf.train.rmsprop()などはtf.train.sgd()の亜種
+//activation:  'relu' 'elu','softmax','sigmoid'
 
- model.add(tf.layers.dense({units: 10,activation:'elu',inputShape: [arr1[0].length]}));
+// loss:     'binaryCrossentropy' 'meanSquaredError' 'categoricalCrossentropy''sparseCategoricalCrossentropy'
+
+//optimizer:     tf.train.adamax(),tf.train.adam()やtf.train.rmsprop()などはtf.train.sgd()の亜種
+//サンプル数や結果分岐数が多い場合、3層にしてunit増やすの超重要!
+ model.add(tf.layers.dense({units: 250,activation:'relu',inputShape: [arr1[0].length]}));
+ model.add(tf.layers.dense({units: 175,activation:'relu'}));
+ model.add(tf.layers.dense({units: 150,activation:'relu'}));
  //console.log(itemArr[0].length);
  //model.add(tf.layers.dense({units: 32,useBias:true}));
  //model.add(tf.layers.dense({units: 1,useBias:true,activation:'sigmoid'}));
@@ -268,7 +284,7 @@ document.getElementById("predict").innerHTML="";
  //model.compile({loss: 'meanSquaredError', optimizer:tf.train.rmsprop(0.01)});
 const learningRate = 0.01;
 const optimizer = tf.train.adam(learningRate);
- model.compile({ optimizer: optimizer,loss: 'meanSquaredError',metrics:['accuracy'] });
+ model.compile({ optimizer: optimizer,loss: 'meanSquaredError',shuffle: true,metrics:['accuracy'] });
 
 
 /*ノード検知で良かった組み合わせ
@@ -394,14 +410,15 @@ run();
   });
 
    await model.save('indexeddb://test');
+   //await model.save('downloads://test')
    xs.dispose();
    ys.dispose();
 
 }
 
 
-//////////////////run！！
-document.getElementById("run").onclick = async function()
+/////////////////file_load_run！！
+document.getElementById("file_load_run").onclick = async function()
 {
 document.getElementById("runstat").innerHTML="";
 document.getElementById("predict").innerHTML="";
@@ -422,11 +439,28 @@ newTestArr=testArr.filter(function(x){
 console.log(newTestArr);
 
 
-  // 予測 x=5の時のyは?
-  predict=model.predict(tf.tensor2d(newTestArr,[1,newTestArr.length]))//テストデータ。1行,3列
-  predict.print();
-  //await model.save('indexeddb://test');
-  document.getElementById("predict").innerHTML=predict;
+const jsonUpload = document.getElementById('json-upload');
+const weightsUpload = document.getElementById('weights-upload');
+
+const loadModel = await tf.loadLayersModel(
+    tf.io.browserFiles([jsonUpload.files[0], weightsUpload.files[0]]));
+
+
+  //await実行されたら以下を実行
+  predictForLoad=loadModel.predict(tf.tensor2d(newTestArr,[1,newTestArr.length]));
+  //predictForLoad.print();
+  //const tensor = tf.outerProduct(predictForLoad,null);
+  var values = predictForLoad.dataSync();
+  var makeArr=Array.from(values);
+  //mapで配列に同じ処理。floorで切り捨て
+  var ValueArr=makeArr.map(function(x){return Math.floor(x*100)/100});
+  var maxValue=Math.max.apply(null, ValueArr);
+  var maxindex=ValueArr.indexOf(maxValue);
+
+  document.getElementById("predict").innerHTML=predictForLoad + "<br>" + ValueArr +
+  "<br>" + maxValue + "の確率で" + item[maxindex] + "点です";
+  console.log(newTestArr);
+  console.log(Array.from(values))
 
 
 /*
@@ -474,9 +508,19 @@ console.log(newTestArr);
   const loadModel =await tf.loadLayersModel('indexeddb://test')
   //await実行されたら以下を実行
   predictForLoad=loadModel.predict(tf.tensor2d(newTestArr,[1,newTestArr.length]));
-  predictForLoad.print();
-  document.getElementById("predict").innerHTML=predictForLoad;
+  //predictForLoad.print();
+  //const tensor = tf.outerProduct(predictForLoad,null);
+  var values = predictForLoad.dataSync();
+  var makeArr=Array.from(values);
+  //mapで配列に同じ処理。floorで切り捨て
+  var ValueArr=makeArr.map(function(x){return Math.floor(x*100)/100});
+  var maxValue=Math.max.apply(null, ValueArr);
+  var maxindex=ValueArr.indexOf(maxValue);
+
+  document.getElementById("predict").innerHTML=predictForLoad + "<br>" + ValueArr +
+  "<br>" + maxValue + "の確率で" + item[maxindex] + "点です";
   console.log(newTestArr);
+  console.log(Array.from(values))
 }
 
 
@@ -484,12 +528,29 @@ console.log(newTestArr);
 
 document.getElementById("search").onchange=function()
 {
+
+    strCombRegex = ":" + document.getElementById("search").value;
+    // 正規表現に組み合わせたい文字列
+
+    regexp = new RegExp(strCombRegex + "$");
+    // 正規表現オブジェクト ここでは正規表現も文字列で記載する
+
 //findは配列要素に特定文字列含んだら抽出、もできる！！
-const kekka = setToArr.find(item => item.indexOf(document.getElementById("search").value) !== -1 )
+const kekka = setToArr.find(item => item.search(regexp) !== -1)
 document.getElementById("exanswer").innerHTML=kekka;
+
 }
 
 
+
+//findは配列要素に特定文字列含んだら抽出、もできる！！
+/*const kekka = setToArr.find(item => item.indexOf(':' + document.getElementById("search").value) !== -1 )
+document.getElementById("exanswer").innerHTML=kekka;
+}*/
+// 行末に「。」マッチする正規表現
+// /.*。$/
+
+    // 正規表現オブジェクト ここでは正規表現も文字列で記載する
 
 
 document.getElementById("epoNum").onchange=function()
@@ -502,20 +563,28 @@ epoNum=document.getElementById("epoNum").value;
 
 
 
-
-
-
-
 document.getElementById("item1").onchange=function()
 {//数字じゃないがfalseの時＝数字のとき
+
+//var arr_col1=arr.slice(0,arr.length/itemArr[0].length);
+//console.log(arr_col1);
+//console.log(arr);
+
+
   if(isNaN(parseFloat(document.getElementById("item1").value)) == false )
  {
   document.getElementById("item11").innerHTML=document.getElementById("item1").value;
   testNum1=parseFloat(document.getElementById("item1").value);
  }else
  {
-let item = setToArr.find(item => item.indexOf(document.getElementById("item1").value) !== -1 )
-var pos = item.indexOf(":");
+
+    strCombRegex = ":" + document.getElementById("item1").value;
+    // 正規表現に組み合わせたい文字列
+    regexp = new RegExp(strCombRegex + "$");
+    // 正規表現オブジェクト ここでは正規表現も文字列で記載する
+
+    let item = setToArr.find(item => item.search(regexp) !== -1)
+    var pos = item.indexOf(":");
 if (pos < 0) {
   console.log(str);
 } else {
@@ -537,7 +606,14 @@ document.getElementById("item2").onchange=function()
  }else
  {
 
-let item = setToArr.find(item => item.indexOf(document.getElementById("item2").value) !== -1 )
+    strCombRegex = ":" + document.getElementById("item2").value;
+    // 正規表現に組み合わせたい文字列
+    regexp = new RegExp(strCombRegex + "$");
+    // 正規表現オブジェクト ここでは正規表現も文字列で記載する
+
+    let item = setToArr.find(item => item.search(regexp) !== -1)
+    var pos = item.indexOf(":");
+
 var pos = item.indexOf(":");
 if (pos < 0) {
   console.log(str);
@@ -560,7 +636,15 @@ document.getElementById("item3").onchange=function()
  }else
  {
 
-let item = setToArr.find(item => item.indexOf(document.getElementById("item3").value) !== -1 )
+    strCombRegex = ":" + document.getElementById("item3").value;
+    // 正規表現に組み合わせたい文字列
+    regexp = new RegExp(strCombRegex + "$");
+    // 正規表現オブジェクト ここでは正規表現も文字列で記載する
+
+    let item = setToArr.find(item => item.search(regexp) !== -1)
+    var pos = item.indexOf(":");
+
+
 var pos = item.indexOf(":");
 if (pos < 0) {
   console.log(str);
@@ -583,7 +667,15 @@ document.getElementById("item4").onchange=function()
  }else
  {
 
-let item = setToArr.find(item => item.indexOf(document.getElementById("item4").value) !== -1 )
+
+    strCombRegex = ":" + document.getElementById("item4").value;
+    // 正規表現に組み合わせたい文字列
+    regexp = new RegExp(strCombRegex + "$");
+    // 正規表現オブジェクト ここでは正規表現も文字列で記載する
+
+    let item = setToArr.find(item => item.search(regexp) !== -1)
+    var pos = item.indexOf(":");
+
 var pos = item.indexOf(":");
 if (pos < 0) {
   console.log(str);
@@ -607,7 +699,16 @@ document.getElementById("item5").onchange=function()
  {
 
 //findは配列要素に特定文字列含んだら抽出、もできる！！
-let item = setToArr.find(item => item.indexOf(document.getElementById("item5").value) !== -1 )
+
+
+    strCombRegex = ":" + document.getElementById("item5").value;
+    // 正規表現に組み合わせたい文字列
+    regexp = new RegExp(strCombRegex + "$");
+    // 正規表現オブジェクト ここでは正規表現も文字列で記載する
+
+    let item = setToArr.find(item => item.search(regexp) !== -1)
+    var pos = item.indexOf(":");
+
 var pos = item.indexOf(":");
 if (pos < 0) {
   console.log(str);
@@ -620,7 +721,10 @@ testNum5=parseFloat(item);
 }
 
 
-
+document.getElementById("save").onclick=async function()
+{//'localstorage://test' 'downloads://test'
+await model.save('downloads://test');
+}
 
 
 </script>
