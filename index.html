@@ -36,27 +36,36 @@
 <select name="name1" id="item1">
 <option> </option>
 </select>
+<input type="text" id="item111">
 <div id=item11></div>
+
 <label>item2:taste</label>
 <select name="name2" id="item2">
 <option> </option>
 </select>
+<input type="text" id="item222">
 <div id=item22></div>
 <br>
+
 <label>item3:package</label>
 <select name="name3" id="item3">
 <option> </option>
 </select>
+<input type="text" id="item333">
 <div id=item33></div>
+
 <label>item4:country</label>
 <select name="name4" id="item4">
 <option> </option>
 </select>
+<input type="text" id="item444">
 <div id=item44></div>
 <br>
+
 <label>item5</label>
 <select name="name5" id="item5">
 </select>
+<input type="text" id="item555">
 <div id=item55></div>
 
 <br>
@@ -159,6 +168,11 @@ lineArr.length=0;
 arr.length=0;
 arr1.length=0;
 arr2.length=0;
+setToArr.length=0;
+setToArr_1.length=0;
+setToArr_2.length=0;
+setToArr_3.length=0;
+setToArr_4.length=0;
 document.getElementById("text").value="";
 document.getElementById("exchange").value="";
 
@@ -342,7 +356,7 @@ document.getElementById("exchange").value="";
 
 
 }
-//getCSV(); //最初に実行される
+getCSV(); //最初に実行される
 ///////////////////////////////
 
 
@@ -1150,6 +1164,53 @@ testNum5=parseFloat(item);
 document.getElementById("save").onclick=async function()
 {//'localstorage://test' 'downloads://test'
 await model.save('downloads://test');
+}
+
+
+//text入力
+document.getElementById("item111").onchange=function()
+{
+  if(isNaN(parseFloat(document.getElementById("item111").value)) == false )
+ {
+  document.getElementById("item11").innerHTML=document.getElementById("item111").value;
+  testNum1=parseFloat(document.getElementById("item111").value);
+ }
+}
+
+document.getElementById("item222").onchange=function()
+{
+   if(isNaN(parseFloat(document.getElementById("item222").value)) == false )
+ {
+  document.getElementById("item22").innerHTML=document.getElementById("item222").value;
+  testNum2=parseFloat(document.getElementById("item222").value);
+ }
+}
+
+document.getElementById("item333").onchange=function()
+{
+   if(isNaN(parseFloat(document.getElementById("item333").value)) == false )
+ {
+  document.getElementById("item33").innerHTML=document.getElementById("item333").value;
+  testNum3=parseFloat(document.getElementById("item333").value);
+ }
+}
+
+document.getElementById("item444").onchange=function()
+{
+  if(isNaN(parseFloat(document.getElementById("item444").value)) == false )
+ {
+  document.getElementById("item44").innerHTML=document.getElementById("item444").value;
+  testNum4=parseFloat(document.getElementById("item444").value);
+ }
+}
+
+document.getElementById("item555").onchange=function()
+{
+   if(isNaN(parseFloat(document.getElementById("item555").value)) == false )
+ {
+  document.getElementById("item55").innerHTML=document.getElementById("item555").value;
+  testNum5=parseFloat(document.getElementById("item555").value);
+ }
 }
 
 
