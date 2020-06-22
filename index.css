@@ -1,11 +1,10 @@
 body {
-  padding: 50px;
+  padding: 20px;
   font: 18px 'Lucida Grande', Helvetica, Arial, sans-serif;
 }
 
-
 label {
-  padding: 0px;
+  padding: 10px;
 }
 
 input,select{
@@ -20,6 +19,12 @@ input,select{
 #predict{
   font: 20px 'Lucida Grande', Helvetica, Arial, sans-serif;
   color: #4682b4;
+}
+
+.block
+{
+background-color:#f0f8ff;
+padding: 10px;
 }
 
 
@@ -58,6 +63,7 @@ input,select{
   /*アニメーションを指定します*/
   animation-duration: 0.5s;
   animation-name: show-balloon;
+  z-index: 100;
 }
 
 .s:hover .s-balloon {

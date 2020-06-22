@@ -5,16 +5,16 @@
 <body>
 <div style="text-align:center">easy AI</div>
 <div>=== log（新しい順） ===</div>
-<div id="log"><br>＊起動時はデフォルトで、世界のカップラーメン教師データcsvと構築済みモデルが読み込まれます。そのまま利用する際は、①検証データ選択、②model_default_run、で評価できます</div>
+<div id="log"><br>＊起動時はデフォルトで、世界のカップラーメン教師データcsv(例題:maker,taste,package,countryの4パラメータ + 正解:味評価0~5点が対になったデータ)<br>と構築済みモデルが読み込まれます。そのまま利用する際は、4.検証データ選択、5.model_default_run、のみ実行すれば評価できます<br>ex.『日清』が『味噌味』『Cup容器』のカップラーメンを『メキシコ』で発売したら、そのラーメンの予想味評価点数は？』</div>
 <br>
-
+<br>
 <div id="all">
-<label>設定:</label>
-<br>
-<a class="s"><label for="arr2col">teach_data cols</label><span class="s-balloon">csv正解データの列数。デフォルトでは、ラーメン評価0~5点を表すflg列数</span></a>
+<a class="s"><label>1. 設定:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><span class="s-balloon">モデルを構築する際の各種パラメータ。これで事象に当てはまる曲線を作る</span></a>
+<div class="block">
+<a class="s"><label for="arr2col">correct_data cols</label><span class="s-balloon">csv正解データの列数。デフォルトでは、ラーメン評価0~5点を表す0,1フラグの列数</span></a>
 <input type="text" id=arr2col placeholder="6" style="width:50px">
-<a class="s"><label for="batch">batch_size</label><span class="s-balloon">教師データ学習行数ブロックの最小単位</span></a>
-<input type="text" id=batch placeholder="128" style="width:50px">
+<a class="s"><label for="batch">batch_size</label><span class="s-balloon">教師データ行数ブロックの最小単位。小:データに敏感に反応。大:平均化。1epoch辺りの計算は高速</span></a>
+<input type="number" id=batch min="32" max="512" step="32" id="lrate" style="width: 50px" placeholder="128">
 <br>
 <a class="s"><label for="acti1">acti(dense1~)</label><span class="s-balloon">第一層〜第N-1層までの活性化関数</span></a>
 <select name="name_acti" id="acti1" style="width: 70px">
@@ -38,21 +38,30 @@
 <option>sgd</option>
 </select>
 <a class="s"><label for="lrate">learningRate</label><span class="s-balloon">学習率</span></a>
-<input type="number" id="lrate" style="width: 50px" placeholder="0.01">
+<input type="number" min="0.01" max="1" step="0.01" id="lrate" style="width: 50px" placeholder="0.01">
+</div>
+
 <br>
-<label>教師(例題+正解)データcsv読み込み:</label>
+<br>
+<label>2. 教師(例題+正解)データcsv読み込み:</label>
+<br>
+<div class="block">
 <a class="s"><input type="file" multiple id="file" name="file" accept=".csv"><span class="s-balloon">新規データを読み込む際はこちらから</span></a>
+</div>
+
 <br>
 <br>
-<label>モデル構築:</label>
-<br>
+<label>3. モデル構築:</label>
+<div class="block">
 <a class="s"><label for="epoNum">epochs</label><span class="s-balloon">教師データの繰り返し学習回数</span></a>
 <input type="text" id=epoNum placeholder=50 style="width:50px">
-<a class="s"><button id="study">study_modelSave_indexeddb</button><span class="s-balloon">新規モデル構築はこちらから。構築モデルはブラウザDB領域に保存されます</span></a>
+<a class="s"><button id="study" style="padding:10px">study_modelSave_indexeddb</button><span class="s-balloon">新規モデル構築はこちらから。構築モデルはブラウザDB領域に保存されます。ロスは0.1以下だとモデル精度良好</span></a>
+</div>
+
 <br>
 <br>
-<a class="s"><label>検証データ選択: </label><span class="s-balloon">(必須)例題に含まれる項目を各列毎に選択して下さい</span></a>
-<br>
+<a class="s"><label>4. 検証データ選択: </label><span class="s-balloon">(必須)例題に含まれる項目を各列毎に選択して下さい</span></a>
+<div class="block">
 <label>col1:&nbsp;maker&nbsp;&nbsp;&nbsp;</label>
 <select name="name1" id="item1" style="width: 200px">
 <option> </option>
@@ -87,15 +96,28 @@ ID番号直接入力用</span></a>
 </select>
 <input type="text" id="item555" style="width: 200px">
 <span id=item55></span>
+</div>
+
 <br>
 <br>
-<button id="test_run" style="padding:15px">model_default_run</button>
-<button id="load_run"style="padding:15px">model_indexeddb_Load_run</button>
-<button id="file_load_run"style="padding:15px">model_file_Load_run</button>
+<label>5. AI解析実行</label>
+<br>
+<div class="block">
+<a class="s"><button id="test_run" style="padding:15px;margin:10px">model_default_run</button><span class="s-balloon">
+デフォルトモデルで解析実行</span></a>
+<a class="s"><button id="load_run"style="padding:15px;margin:10px">model_indexeddb_Load_run</button><span class="s-balloon">
+indexeddbに保存されたモデルで解析実行</span></a>
+<a class="s"><button id="file_load_run"style="padding:15px;margin:10px">model_file_Load_run</button><span class="s-balloon">
+ファイルから読み込んだモデルで解析実行</span></a>
+</div>
 <br>
 <br>
+<br>
+<label>-option-</label>
+<br>
+<div class="block">
 <label>modelファイル保存:</label>
-<a class="s"><button id="save">modelSave_file</button><span class="s-balloon">
+<a class="s"><button id="save" style="padding:10px">modelSave_file</button><span class="s-balloon">
 indexeddbに保存されたモデルをファイル書き出しして保存</span></a>
 <br>
 <label>modelファイル読み出し:</label>
@@ -103,6 +125,8 @@ indexeddbに保存されたモデルをファイル書き出しして保存</spa
 <input id="json-upload" type="file" style="width:200"/>
 <label>bin</label>
 <input id="weights-upload" type="file" style="width:200"/>
+</div>
+
 </div>
 <div id="runstat"></div>
 <br>
