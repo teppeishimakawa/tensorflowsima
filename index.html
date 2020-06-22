@@ -1,81 +1,119 @@
 <html>
 <head>
+<link href="./index.css" rel="stylesheet">
+</head>
+<body>
+<div style="text-align:center">easy AI</div>
 <div>=== log（新しい順） ===</div>
-<div id="log"></div>
+<div id="log"><br>＊起動時はデフォルトで、世界のカップラーメン教師データcsvと構築済みモデルが読み込まれます。そのまま利用する際は、①検証データ選択、②model_default_run、で評価できます</div>
 <br>
-<div id="runstat"></div>
+
+<div id="all">
+<label>設定:</label>
 <br>
-<div id="predict"></div>
+<a class="s"><label for="arr2col">teach_data cols</label><span class="s-balloon">csv正解データの列数。デフォルトでは、ラーメン評価0~5点を表すflg列数</span></a>
+<input type="text" id=arr2col placeholder="6" style="width:50px">
+<a class="s"><label for="batch">batch_size</label><span class="s-balloon">教師データ学習行数ブロックの最小単位</span></a>
+<input type="text" id=batch placeholder="128" style="width:50px">
+<br>
+<a class="s"><label for="acti1">acti(dense1~)</label><span class="s-balloon">第一層〜第N-1層までの活性化関数</span></a>
+<select name="name_acti" id="acti1" style="width: 70px">
+<option>relu</option>
+<option>elu</option>
+<option>softmax</option>
+<option>sigmoid</option>
+</select>
+<a class="s"><label for="acti2">acti(last_dense)</label><span class="s-balloon">最終層の活性化関数</span></a>
+<select name="name_acti" id="acti2" style="width: 70px">
+<option>sigmoid</option>
+<option>relu</option>
+<option>elu</option>
+<option>softmax</option>
+</select>
+<a class="s"><label for="opti">optimizer</label><span class="s-balloon">損失関数最小化用の最適化アルゴリズム</span></a>
+<select name="name_acti" id="opti" style="width: 70px">
+<option>adam</option>
+<option>adamax</option>
+<option>rmsprop</option>
+<option>sgd</option>
+</select>
+<a class="s"><label for="lrate">learningRate</label><span class="s-balloon">学習率</span></a>
+<input type="number" id="lrate" style="width: 50px" placeholder="0.01">
+<br>
+<label>教師(例題+正解)データcsv読み込み:</label>
+<a class="s"><input type="file" multiple id="file" name="file" accept=".csv"><span class="s-balloon">新規データを読み込む際はこちらから</span></a>
 <br>
 <br>
-<label>teach_data cols</label>
-<input type="text" id=arr2col placeholder="6">
-<label>batch_size</label>
-<input type="text" id=batch placeholder="128">
+<label>モデル構築:</label>
 <br>
-<input type="file" multiple id="file" name="file" accept=".csv">
+<a class="s"><label for="epoNum">epochs</label><span class="s-balloon">教師データの繰り返し学習回数</span></a>
+<input type="text" id=epoNum placeholder=50 style="width:50px">
+<a class="s"><button id="study">study_modelSave_indexeddb</button><span class="s-balloon">新規モデル構築はこちらから。構築モデルはブラウザDB領域に保存されます</span></a>
 <br>
-<label>epochs</label>
-<input type="text" id=epoNum placeholder=50>
 <br>
-<button id="study">study_modelSave_indexeddb</button>
-<button id="load_run">model_indexeddb_Load_run</button>
+<a class="s"><label>検証データ選択: </label><span class="s-balloon">(必須)例題に含まれる項目を各列毎に選択して下さい</span></a>
 <br>
-<button id="save">modelSave_file</button>
+<label>col1:&nbsp;maker&nbsp;&nbsp;&nbsp;</label>
+<select name="name1" id="item1" style="width: 200px">
+<option> </option>
+</select>
+<a class="s"><input type="text" id="item111" style="width: 200px">
+<span id=item11></span><span class="s-balloon">
+ID番号直接入力用</span></a>
+<br>
+<label>col2:&nbsp;taste&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+<select name="name2" id="item2" style="width: 200px">
+<option> </option>
+</select>
+<input type="text" id="item222" style="width: 200px">
+<span id=item22></span>
+<br>
+<label>col3:&nbsp;package</label>
+<select name="name3" id="item3" style="width: 200px">
+<option> </option>
+</select>
+<input type="text" id="item333" style="width: 200px">
+<span id=item33></span>
+<br>
+<label>col4:&nbsp;country&nbsp;</label>
+<select name="name4" id="item4" style="width: 200px">
+<option> </option>
+</select>
+<input type="text" id="item444" style="width: 200px">
+<span id=item44></span>
+<br>
+<label>col5:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+<select name="name5" id="item5" style="width: 200px">
+</select>
+<input type="text" id="item555" style="width: 200px">
+<span id=item55></span>
+<br>
+<br>
+<button id="test_run" style="padding:15px">model_default_run</button>
+<button id="load_run"style="padding:15px">model_indexeddb_Load_run</button>
+<button id="file_load_run"style="padding:15px">model_file_Load_run</button>
+<br>
+<br>
+<label>modelファイル保存:</label>
+<a class="s"><button id="save">modelSave_file</button><span class="s-balloon">
+indexeddbに保存されたモデルをファイル書き出しして保存</span></a>
+<br>
+<label>modelファイル読み出し:</label>
 <label>json</label>
 <input id="json-upload" type="file" style="width:200"/>
 <label>bin</label>
 <input id="weights-upload" type="file" style="width:200"/>
-<button id="file_load_run">model_file_Load_run</button>
+</div>
+<div id="runstat"></div>
 <br>
-<button id="test_run">test_run</button>
-
+<div id="predict" style="size:30px"></div>
 <br>
-<br>
-<label>item1:maker</label>
-<select name="name1" id="item1">
-<option> </option>
-</select>
-<input type="text" id="item111">
-<div id=item11></div>
-
-<label>item2:taste</label>
-<select name="name2" id="item2">
-<option> </option>
-</select>
-<input type="text" id="item222">
-<div id=item22></div>
-<br>
-
-<label>item3:package</label>
-<select name="name3" id="item3">
-<option> </option>
-</select>
-<input type="text" id="item333">
-<div id=item33></div>
-
-<label>item4:country</label>
-<select name="name4" id="item4">
-<option> </option>
-</select>
-<input type="text" id="item444">
-<div id=item44></div>
-<br>
-
-<label>item5</label>
-<select name="name5" id="item5">
-</select>
-<input type="text" id="item555">
-<div id=item55></div>
-
-<br>
-<br>
-<div>学習用+最終列教師データ/登場する数値は2桁に抑える</div>
+<a class="s"><label>例題+正解データ一覧&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><span class="s-balloon">例題データで登場する項目をtensorflowで扱えるよう自動採番し数値化。モデルの精度を高めるため登場する数値は1桁+小数点以下2桁以内に抑えている</span></a>
   <textarea id="text" rows="10" cols="100" placeholder="学習用データ"></textarea>
 <br>
 <br>
 <br>
-<label>id search:</label>
+<a class="s"><label>id search:&nbsp;&nbsp;&nbsp;&nbsp;</label><span class="s-balloon">例題データで登場する項目名からID番号を検索</span></a>
 <input type="text" id="search">
 <div id="exanswer"></div>
 <textarea id="exchange" rows="20" cols="100" placeholder="id変換一覧"></textarea>
@@ -133,6 +171,14 @@ var item=[0,1,2,3,4,5];
  var option,option2,option3,option4;
  var select,select2,select3,select4;
 
+ //var acti1;
+ //var acti2;
+ var acti1='relu';
+ var acti2='sigmoid';
+
+ var learningRate=0.01;
+ var optimizer=tf.train.adam(learningRate);
+
 select = document.getElementById("item1");
 select2 = document.getElementById("item2");
 select3 = document.getElementById("item3");
@@ -178,8 +224,14 @@ document.getElementById("exchange").value="";
 
 
 
+
   console.log('◆学習結果読込開始');
-  log.innerHTML = '◆学習結果読込開始' + '<br>' + log.innerHTML;
+
+  log.innerHTML = '◆学習結果読込中' + '<br>' + log.innerHTML;
+ document.getElementById("all").style.visibility="hidden";
+
+
+
 
     var req = new XMLHttpRequest(); // HTTPでファイルを読み込むためのXMLHttpRrequestオブジェクトを生成
     req.open("get", "ramen-train0217.csv", true); // アクセスするファイルを指定
@@ -287,7 +339,9 @@ document.getElementById("exchange").value="";
       for (var j = 0; j < itemArr[i].length; j++)
         {
       //sliceはコピー作れる。先頭0で何個目で切るかを決める
+      //学習データ列
 　　　　　arr1[i]=itemArr[i].slice(0,itemArr[i].length-arr2col);
+　　　//教師データ列
          arr2[i]=itemArr[i].slice(itemArr[i].length-arr2col);
         }
       }
@@ -309,7 +363,9 @@ document.getElementById("exchange").value="";
 
       document.getElementById('text').value=insert.slice( 0, -1 );
       //console.log(insert.slice( 0, -1 ));
-      log.innerHTML =  ' 取得完了' + '<br>' + log.innerHTML;
+      log.innerHTML =  ' ◆取得完了' + '<br>' + log.innerHTML;
+
+  document.getElementById("all").style.visibility="visible";
 
 
 
@@ -433,7 +489,8 @@ if (select4.hasChildNodes())
 
 
   console.log('◆学習結果読込開始');
-  log.innerHTML = '◆学習結果読込開始' + '<br>' + log.innerHTML;
+  log.innerHTML = '◆学習結果読込中' + '<br>' + log.innerHTML;
+  document.getElementById("all").style.visibility="hidden";
   file = e.target.files;
   //file reader作成
   var reader = new FileReader();
@@ -444,6 +501,7 @@ if (select4.hasChildNodes())
   //ファイルの中身を取得後に処理を行う
   　console.log('◆学習結果読込完了');
     log.innerHTML = '◆学習結果読込完了' + '<br>' + log.innerHTML;
+    document.getElementById("all").style.visibility="visible";
 
       // 行単位で配列にする
       lineArr = reader.result.split("\n");
@@ -579,7 +637,7 @@ if (select4.hasChildNodes())
 
  for(i=0;i<setToArr_1.length;i++)
  {
- 
+
  option = document.createElement("option");
  option.text = setToArr_1[i];
  option.value = setToArr_1[i];
@@ -658,18 +716,18 @@ document.getElementById("predict").innerHTML="";
 
 //optimizer:     tf.train.adamax(),tf.train.adam()やtf.train.rmsprop()などはtf.train.sgd()の亜種
 //サンプル数や結果分岐数が多い場合、3層にしてunit増やすの超重要!
- model.add(tf.layers.dense({units: 250,activation:'relu',inputShape: [arr1[0].length]}));
- model.add(tf.layers.dense({units: 175,activation:'relu'}));
- model.add(tf.layers.dense({units: 150,activation:'relu'}));
+
+ model.add(tf.layers.dense({units: 250,activation:acti1,inputShape: [arr1[0].length]}));
+ model.add(tf.layers.dense({units: 175,activation:acti1}));
+ model.add(tf.layers.dense({units: 150,activation:acti1}));
  //console.log(itemArr[0].length);
  //model.add(tf.layers.dense({units: 32,useBias:true}));
  //model.add(tf.layers.dense({units: 1,useBias:true,activation:'sigmoid'}));
- model.add(tf.layers.dense({units:arr2[0].length,activation:'sigmoid'}));
+ model.add(tf.layers.dense({units:arr2[0].length,activation:acti2}));
 
   //学習実行,sgd:確率的勾配降下法オプティマイザ。tf.train.rmsprop(0.01)超重要
  //model.compile({loss: 'meanSquaredError', optimizer:tf.train.rmsprop(0.01)});
-const learningRate = 0.01;
-const optimizer = tf.train.adam(learningRate);
+
  model.compile({ optimizer: optimizer,loss: 'meanSquaredError',shuffle: true,metrics:['accuracy'] });
 
 
@@ -843,8 +901,7 @@ const weightsUpload = document.getElementById('weights-upload');
   var maxValue=Math.max.apply(null, ValueArr);
   var maxindex=ValueArr.indexOf(maxValue);
 
-  document.getElementById("predict").innerHTML=predictForLoad + "<br>" + ValueArr +
-  "<br>" + maxValue + "の確率で" + item[maxindex] + "点です";
+  document.getElementById("predict").innerHTML=maxValue + "の確率で" + item[maxindex] + "点です" + "<br>" + predictForLoad + "<br>" + ValueArr;
   console.log(newTestArr);
   console.log(Array.from(values))
 
@@ -903,8 +960,8 @@ console.log(newTestArr);
   var maxValue=Math.max.apply(null, ValueArr);
   var maxindex=ValueArr.indexOf(maxValue);
 
-  document.getElementById("predict").innerHTML=predictForLoad + "<br>" + ValueArr +
-  "<br>" + maxValue + "の確率で" + item[maxindex] + "点です";
+  document.getElementById("predict").innerHTML=maxValue + "の確率で" + item[maxindex] + "点です" + "<br>" + predictForLoad + "<br>" + ValueArr;
+  console.log(newTestArr);
   console.log(newTestArr);
   console.log(Array.from(values))
 }
@@ -950,8 +1007,8 @@ loadModel = await tf.loadLayersModel("./test.json");;
   var maxValue=Math.max.apply(null, ValueArr);
   var maxindex=ValueArr.indexOf(maxValue);
 
-  document.getElementById("predict").innerHTML=predictForLoad + "<br>" + ValueArr +
-  "<br>" + maxValue + "の確率で" + item[maxindex] + "点です";
+  document.getElementById("predict").innerHTML=maxValue + "の確率で" + item[maxindex] + "点です" + "<br><br>" + predictForLoad + "<br>" + ValueArr;
+  console.log(newTestArr);
   console.log(newTestArr);
   console.log(Array.from(values))
 }
@@ -1214,8 +1271,40 @@ document.getElementById("item555").onchange=function()
 }
 
 
+document.getElementById("acti1").onchange=function()
+{
+acti1=document.getElementById("acti1").value;
+}
+
+document.getElementById("acti2").onchange=function()
+{
+acti2=document.getElementById("acti2").value;
+}
+
+
+document.getElementById("opti").onchange=function()
+{
+  if(document.getElementById("opti").value == "adam")
+  {
+  optimizer=tf.train.adam(learningRate);
+  }else if(document.getElementById("opti").value == "adamax")
+  {
+  optimizer=tf.train.adamax(learningRate);
+  }else if(document.getElementById("opti").value == "rmsprop")
+  {
+  optimizer=tf.train.rmsprop(learningRate);
+  }else if(document.getElementById("opti").value == "sgd")
+  {
+  optimizer=tf.train.sgd(learningRate);
+  }
+}
+
+document.getElementById("lrate").onchange=function()
+{
+learningRate=parseFloat(document.getElementById("lrate").value);
+}
+
+
 </script>
-</head>
-<body>
 </body>
 </html>
